@@ -24,10 +24,15 @@ app.post('/api/write', (req, res) => {
     filename: string;
     text: string;
   } = req.body;
-  console.log('write: data=', data);
   if (data.filename) {
+    const outPath = path.join(OUTDIR, data.filename);
+    console.log('Writing:', outPath);
+    console.log('Content:', data.text);
     try {
-      fs.writeFileSync(path.join(OUTDIR, data.filename), data.text);
+      if (!fs.existsSync(OUTDIR)) {
+        fs.mkdirSync(OUTDIR);
+      }
+      fs.writeFileSync(outPath, data.text);
       res.send({
         error: null,
       });
@@ -42,20 +47,23 @@ app.post('/api/write', (req, res) => {
 });
 
 app.post('/api/read', (req, res) => {
-  console.log('in /api/read');
   const data: {
     filename: string;
   } = req.body;
   if (data.filename) {
+    const outPath = path.join(OUTDIR, data.filename);
+    console.log('Reading:', outPath);
     try {
       res.send({
-        text: fs.readFileSync(path.join(OUTDIR, data.filename), 'utf8'),
+        text: fs.readFileSync(outPath, 'utf8'),
         error: null,
       });
     } catch (err) {
-      console.log('err=', err);
       if (err.code === 'ENOENT') {
-        fs.writeFileSync(path.join(OUTDIR, data.filename), '');
+        if (!fs.existsSync(OUTDIR)) {
+          fs.mkdirSync(OUTDIR);
+        }
+        fs.writeFileSync(outPath, '');
         res.send({
           text: '',
           error: null,

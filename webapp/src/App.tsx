@@ -55,42 +55,44 @@ export function App() {
     });
   }, [filename]);
 
-  const registerSaver = (monaco: any) => {
-    const models = monaco.editor.getModels();
-    for (const model of models) {
-      const validate = () => {
-        const text = model.getValue();
-        fetch('http://localhost:8080/api/write', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              filename,
-              text
-            })
-        }).then(async response => {
-          const json = await response.json();
-          if (json.error) {
-            alert(json.error);
-          } else {
-            setStatus('');
-          }
-        });
-      };
-  
-      let handle: NodeJS.Timeout | null = null;
-      model.onDidChangeContent(() => {
-        if (handle) {
-          clearTimeout(handle);
-        }
-        handle = setTimeout(validate, 500);
-      });
-      validate();
-    }
-  }
+  const save = (content: string) => {
+    fetch('http://localhost:8080/api/write', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename,
+          text: content,
+        })
+    }).then(async response => {
+      const json = await response.json();
+      if (json.error) {
+        alert(json.error);
+      } else {
+        setStatus('');
+      }
+    });
+  };
 
   const onMount: OnMount = (editor, monaco: any) => {
+    editor.addAction({
+      id: 'save-action',
+      label: 'save-label',
+      keybindings: [
+        monaco.KeyMod.chord(
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+        )
+      ],
+      precondition: null,
+      keybindingContext: null,
+      contextMenuGroupId: 'navigation',
+      contextMenuOrder: 1.5,
+      run: (editor: any) => {
+        save(editor.getModel().getValue());
+      }
+    });
+
     monaco.editor.defineTheme('retro', {
       base: 'vs-dark',
       inherit: true,
@@ -108,7 +110,6 @@ export function App() {
     });
     configureEditor(monaco);
     registerCompletionProvider(monaco);
-    registerSaver(monaco);
     // this is needed to initially use dark mode since the
     // custom theme needs to be defined before dark mode can be used
     setTheme('retro');
