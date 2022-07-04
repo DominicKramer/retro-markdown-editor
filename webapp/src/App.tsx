@@ -1,7 +1,7 @@
 import React from 'react';
 import Editor, { OnMount } from "@monaco-editor/react";
 
-const MATHLINGUA_KEY = 'MATHLINGUA_EDITOR';
+const MATHLINGUA_KEY = 'book.md';
 const URL_SEARCH_PREFIX = '?filename=';
 
 const ORANGE = '#ce9178';
@@ -15,6 +15,7 @@ const FONTS = [
 
 export function App() {
   const search = window.location.search;
+  const basePath = window.location.origin.replace('3000', '8080');
   let urlFilename: string|undefined = undefined;
   if (search && search.startsWith(URL_SEARCH_PREFIX)) {
     urlFilename = search.substring(URL_SEARCH_PREFIX.length);
@@ -23,10 +24,10 @@ export function App() {
   const filename = urlFilename ?? MATHLINGUA_KEY;
   const [text, setText] = React.useState('');
   const [status, setStatus] = React.useState('');
-  const [rawFontSize, setRawFontSize] = React.useState(18);
+  const [rawFontSize, setRawFontSize] = React.useState(26);
   const [theme, setTheme] = React.useState('light');
   const [fontFamily, setFontFamily] = React.useState(FONTS[0]);
-  const [language, setLanguage] = React.useState('yaml');
+  const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
 
   const [rawFontSizeText, setRawFontSizeText] = React.useState('' + rawFontSize);
@@ -37,7 +38,7 @@ export function App() {
   }, [theme]);
 
   React.useEffect(() => {
-    fetch('http://localhost:8080/api/read', {
+    fetch(`${basePath}/api/read`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,8 +56,27 @@ export function App() {
     });
   }, [filename]);
 
+  function registerSaver(monaco: any) {
+    const models = monaco.editor.getModels();
+    for (const model of models) {
+      const validate = () => {
+        const val = model.getValue();
+        save(val);
+      };
+
+      let handle: NodeJS.Timeout | null = null;
+      model.onDidChangeContent(() => {
+        if (handle) {
+          clearTimeout(handle);
+        }
+        handle = setTimeout(validate, 500);
+      });
+      validate();
+    }
+  }
+
   const save = (content: string) => {
-    fetch('http://localhost:8080/api/write', {
+    fetch(`${basePath}/api/write`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,6 +130,7 @@ export function App() {
     });
     configureEditor(monaco);
     registerCompletionProvider(monaco);
+    // registerSaver(monaco);
     // this is needed to initially use dark mode since the
     // custom theme needs to be defined before dark mode can be used
     setTheme('retro');
@@ -265,6 +286,7 @@ export function App() {
           cursorStyle: 'block',
           cursorBlinking: 'solid',
           matchBrackets: 'never',
+          wordWrap: true,
           fontSize,
           fontFamily,
         }}
