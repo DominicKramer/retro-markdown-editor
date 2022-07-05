@@ -1,6 +1,12 @@
 import React from 'react';
 import Editor, { OnMount } from "@monaco-editor/react";
 
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+
+import 'katex/dist/katex.min.css';
+
 const MATHLINGUA_KEY = 'book.md';
 const URL_SEARCH_PREFIX = '?filename=';
 
@@ -35,6 +41,7 @@ export function App() {
   const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
   const [color, setColor] = React.useState(window.localStorage.getItem(COLOR_KEY) || COLORS[0]);
+  const [showEditor, setShowEditor] = React.useState(true);
 
   const [rawFontSizeText, setRawFontSizeText] = React.useState('' + rawFontSize);
   const [languageText, setLanguageText] = React.useState(language);
@@ -155,6 +162,57 @@ export function App() {
     fontSize,
     fontFamily,
   } as const;
+
+  let component;
+  if (showEditor) {
+    component = <Editor
+      height='92vh'
+      language={language}
+      theme={light ? 'light' : 'retro'}
+      options={{
+        lineNumbers: 'off',
+        autoClosingBrackets: 'never',
+        autoClosingQuotes: 'never',
+        tabSize: 2,
+        autoIndent: true,
+        quickSuggestions: false,
+        minimap: {
+          enabled: false
+        },
+        renderIndentGuides: false,
+        renderLineHighlight: false,
+        cursorStyle: 'block',
+        cursorBlinking: 'solid',
+        matchBrackets: 'never',
+        wordWrap: true,
+        fontSize,
+        fontFamily,
+      }}
+      value={text}
+      onMount={onMount}
+      onChange={value => {
+        setStatus('*');
+        setText(value ?? '');
+      }}
+    />;
+  } else {
+    component = (
+    <div style={{
+      width: '90%',
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      color,
+      fontFamily,
+      fontSize,
+    }}>
+      <ReactMarkdown
+        children={text}
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+      />
+    </div>);
+  }
+
   return <div style={{
     width: light ? '80%' : '99%',
     marginLeft: 'auto',
@@ -173,9 +231,16 @@ export function App() {
       <button
         style={buttonStyle}
         onClick={() => {
-          setControlsShown(!controlsShown)
+          setControlsShown(!controlsShown);
         }}>
           =
+      </button>
+      <button
+        style={buttonStyle}
+        onClick={() => {
+          setShowEditor(!showEditor);
+        }}>
+          #
       </button>
       <span style={buttonStyle}>
         {status}
@@ -299,36 +364,7 @@ export function App() {
           }
         </select>
       </div>
-      <Editor
-        height='92vh'
-        language={language}
-        theme={light ? 'light' : 'retro'}
-        options={{
-          lineNumbers: 'off',
-          autoClosingBrackets: 'never',
-          autoClosingQuotes: 'never',
-          tabSize: 2,
-          autoIndent: true,
-          quickSuggestions: false,
-          minimap: {
-            enabled: false
-          },
-          renderIndentGuides: false,
-          renderLineHighlight: false,
-          cursorStyle: 'block',
-          cursorBlinking: 'solid',
-          matchBrackets: 'never',
-          wordWrap: true,
-          fontSize,
-          fontFamily,
-        }}
-        value={text}
-        onMount={onMount}
-        onChange={value => {
-          setStatus('*');
-          setText(value ?? '');
-        }}
-      />
+      {component}
     </div>
   </div>;
 }

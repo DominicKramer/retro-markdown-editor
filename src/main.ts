@@ -46,7 +46,7 @@ app.post('/api/write', (req, res) => {
       const diff = execSync('git diff');
       if (diff.length > 0) {
         execSync(`git add ${data.filename}`);
-        execSync(`git commit -m 'write at ${new Date()}\n\n${diff}'`);
+        execSync(`git commit -m 'write at ${new Date()}'`);
       }
       res.send({
         error: null,
