@@ -43,8 +43,9 @@ app.post('/api/write', (req, res) => {
     try {
       ensureOutdirExists();
       fs.writeFileSync(outPath, data.text);
+      const status = execSync(`git status ${data.filename}`)
       const diff = execSync('git diff');
-      if (diff.length > 0) {
+      if (diff.length > 0 || status.indexOf('Untracked files:') >= 0) {
         execSync(`git add ${data.filename}`);
         execSync(`git commit -m 'write at ${new Date()}'`);
       }
