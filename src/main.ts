@@ -3,10 +3,22 @@ import * as bodyParser from 'body-parser';
 import cors from 'cors';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as cp from 'child_process';
+import * as os from 'os';
 
 const app = express();
 const port = process.env.PORT || 8080;
-const OUTDIR = 'out';
+const OUTDIR = path.join(os.homedir(), 'mlg-editor-data');
+
+function ensureOutdirExists() {
+  if (!fs.existsSync(OUTDIR)) {
+    fs.mkdirSync(OUTDIR);
+  }
+}
+
+function execSync(cmd: string): string {
+  return cp.execSync(cmd, { cwd: OUTDIR }).toString();
+}
 
 app.use(express.static(path.join('webapp', 'build')));
 app.use(bodyParser.json());
@@ -29,10 +41,13 @@ app.post('/api/write', (req, res) => {
     console.log('Writing:', outPath);
     console.log('Content:', data.text);
     try {
-      if (!fs.existsSync(OUTDIR)) {
-        fs.mkdirSync(OUTDIR);
-      }
+      ensureOutdirExists();
       fs.writeFileSync(outPath, data.text);
+      const diff = execSync('git diff');
+      if (diff.length > 0) {
+        execSync(`git add ${data.filename}`);
+        execSync(`git commit -m 'write at ${new Date()}\n\n${diff}'`);
+      }
       res.send({
         error: null,
       });
@@ -60,9 +75,7 @@ app.post('/api/read', (req, res) => {
       });
     } catch (err) {
       if (err.code === 'ENOENT') {
-        if (!fs.existsSync(OUTDIR)) {
-          fs.mkdirSync(OUTDIR);
-        }
+        ensureOutdirExists();
         fs.writeFileSync(outPath, '');
         res.send({
           text: '',
@@ -81,5 +94,8 @@ app.post('/api/read', (req, res) => {
 });
 
 app.listen(port, () => {
+  ensureOutdirExists();
+  execSync('git init');
+  execSync('git branch -m main');
   console.log(`Listening on port ${port}`);
 });
