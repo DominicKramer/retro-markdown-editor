@@ -4,8 +4,13 @@ import Editor, { OnMount } from "@monaco-editor/react";
 const MATHLINGUA_KEY = 'book.md';
 const URL_SEARCH_PREFIX = '?filename=';
 
-const ORANGE = '#ce9178';
-const DARK_ORANGE = '#ce9178';
+const COLOR_KEY = 'mlg-color';
+
+const COLORS = [
+  '#ce9178', // orange
+  '#b8b8b8', // gray
+  '#54ba4e', // green
+];
 
 const FONTS = [
   'AcPlus_IBM_VGA_8x14',
@@ -29,6 +34,7 @@ export function App() {
   const [fontFamily, setFontFamily] = React.useState(FONTS[0]);
   const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
+  const [color, setColor] = React.useState(window.localStorage.getItem(COLOR_KEY) || COLORS[0]);
 
   const [rawFontSizeText, setRawFontSizeText] = React.useState('' + rawFontSize);
   const [languageText, setLanguageText] = React.useState(language);
@@ -118,14 +124,14 @@ export function App() {
       inherit: true,
       rules: [{
         background: '#000000',
-        foreground: DARK_ORANGE,
+        foreground: color,
       }],
       colors: {
-        'editor.foreground': ORANGE,
+        'editor.foreground': color,
         'editor.background': '#000000',
         'editor.selectionBackground': '#222222',
         'editor.selectionHighlightBackground': '#000000',
-        'editorCursor.foreground': '#663300',
+        'editorCursor.foreground': color,
       }
     });
     configureEditor(monaco);
@@ -138,7 +144,7 @@ export function App() {
 
   const light = theme === 'light';
   const usingRetroFont = fontFamily !== 'Monospace';
-  const foreground = light ? '#555555' : ORANGE;
+  const foreground = light ? '#555555' : color;
   const fontSize = usingRetroFont ? rawFontSize + 7 : rawFontSize;
   const buttonStyle = {
     border: 'none',
@@ -175,7 +181,7 @@ export function App() {
         {status}
       </span>
       <div style={{
-        color: ORANGE,
+        color: color,
         display: controlsShown ? 'unset' : 'none',
         fontFamily,
         fontSize,
@@ -184,9 +190,9 @@ export function App() {
         <select style={{
           border: 'solid',
           borderWidth: '1px',
-          borderColor: ORANGE,
+          borderColor: color,
           background: '#000000',
-          color: ORANGE,
+          color: color,
           fontFamily,
           fontSize,
         }}
@@ -197,7 +203,7 @@ export function App() {
             FONTS.map(fontName => (<option style={{
               background: '#333333',
               border: 'solid',
-              borderColor: ORANGE,
+              borderColor: color,
               borderWidth: '1px',
             }}>
               {fontName ?? 'default'}
@@ -208,8 +214,8 @@ export function App() {
         <input style={{
           background: '#000000',
           borderWidth: '1px',
-          borderColor: ORANGE,
-          color: ORANGE,
+          borderColor: color,
+          color: color,
           width: '2em',
           fontFamily,
           fontSize,
@@ -223,12 +229,38 @@ export function App() {
             setRawFontSize(+rawFontSizeText)
           }
         }} />
+        Color:&nbsp;
+        <select style={{
+          border: 'solid',
+          borderWidth: '1px',
+          borderColor: color,
+          background: '#000000',
+          color: color,
+          fontFamily,
+          fontSize,
+        }}
+        onChange={(event) => {
+          const newColor = event.target.value;
+          window.localStorage.setItem(COLOR_KEY, newColor);
+          setColor(newColor);
+        }}>
+          {
+          COLORS.map(hex => (<option style={{
+              background: '#333333',
+              border: 'solid',
+              borderColor: color,
+              borderWidth: '1px',
+            }}>
+              {hex}
+            </option>))
+          }
+        </select>
         &nbsp;Language:&nbsp;
         <input style={{
           background: '#000000',
           borderWidth: '1px',
-          borderColor: ORANGE,
-          color: ORANGE,
+          borderColor: color,
+          color: color,
           width: '2em',
           fontFamily,
           fontSize,
@@ -246,9 +278,9 @@ export function App() {
         <select style={{
           border: 'solid',
           borderWidth: '1px',
-          borderColor: ORANGE,
+          borderColor: color,
           background: '#000000',
-          color: ORANGE,
+          color: color,
           fontFamily,
           fontSize,
         }}
@@ -259,7 +291,7 @@ export function App() {
             ['light', 'retro'].map(theme => (<option style={{
               background: '#333333',
               border: 'solid',
-              borderColor: ORANGE,
+              borderColor: color,
               borderWidth: '1px',
             }}>
               {theme}
