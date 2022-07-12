@@ -9,6 +9,16 @@
   src: local('AcPlus_IBM_VGA_8x14'), url(./fonts/AcPlus_IBM_VGA_8x14.ttf) format('truetype');
 }
 
+@font-face {
+  font-family: 'Flexi_IBM_VGA_True_437';
+  src: local('Flexi_IBM_VGA_True_437'), url(./fonts/Flexi_IBM_VGA_True_437.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Flexi_IBM_VGA_True';
+  src: local('Flexi_IBM_VGA_True'), url(./fonts/Flexi_IBM_VGA_True.ttf) format('truetype');
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -28,6 +38,10 @@ code {
 }
 
 code {
-  font-family: 'AcPlus_IBM_VGA_8x14';
+  font-family: 'Flexi_IBM_VGA_True';
   color: #00aacc;
+}
+
+.katex {
+  font-size: 0.9em !important;
 }

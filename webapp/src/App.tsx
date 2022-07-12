@@ -21,6 +21,8 @@ const COLORS = [
 const FONTS = [
   'AcPlus_IBM_VGA_8x14',
   'IBM_DOS_ISO9',
+  'Flexi_IBM_VGA_True_437',
+  'Flexi_IBM_VGA_True',
   'Monospace',
 ];
 
@@ -37,7 +39,7 @@ export function App() {
   const [status, setStatus] = React.useState('');
   const [rawFontSize, setRawFontSize] = React.useState(26);
   const [theme, setTheme] = React.useState('light');
-  const [fontFamily, setFontFamily] = React.useState(FONTS[0]);
+  const [fontFamily, setFontFamily] = React.useState(FONTS[2]);
   const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
   const [color, setColor] = React.useState(window.localStorage.getItem(COLOR_KEY) || COLORS[0]);
