@@ -7,15 +7,22 @@ import rehypeKatex from 'rehype-katex'
 
 import 'katex/dist/katex.min.css';
 
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Device } from '@capacitor/device';
+
 const MATHLINGUA_KEY = 'book.md';
 const URL_SEARCH_PREFIX = '?filename=';
 
 const COLOR_KEY = 'mlg-color';
+const FONT_KEY = 'mlg-font';
+const RETRO_KEY = 'mlg-retro';
+const FUZZ_KEY = 'mlg-fuzz';
 
 const COLORS = [
   '#ce9178', // orange
   '#b8b8b8', // gray
   '#54ba4e', // green
+  '#00ffff',
 ];
 
 const FONTS = [
@@ -23,6 +30,8 @@ const FONTS = [
   'IBM_DOS_ISO9',
   'Flexi_IBM_VGA_True_437',
   'Flexi_IBM_VGA_True',
+  'TerminusTTF',
+  'Glass_TTY_VT220',
   'Monospace',
 ];
 
@@ -39,11 +48,16 @@ export function App() {
   const [status, setStatus] = React.useState('');
   const [rawFontSize, setRawFontSize] = React.useState(26);
   const [theme, setTheme] = React.useState('light');
-  const [fontFamily, setFontFamily] = React.useState(FONTS[2]);
+  const [fontFamily, setFontFamily] = React.useState(window.localStorage.getItem(FONT_KEY) || FONTS[2]);
   const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
-  const [color, setColor] = React.useState(window.localStorage.getItem(COLOR_KEY) || COLORS[0]);
+  const [color, setColor] = React.useState(window.localStorage.getItem(COLOR_KEY) || COLORS[1]);
   const [showEditor, setShowEditor] = React.useState(true);
+  const storedRetro = window.localStorage.getItem(RETRO_KEY);
+  const [retro, setRetro] = React.useState(storedRetro == null ? true : storedRetro === 'true');
+  const storedFuzz = window.localStorage.getItem(FUZZ_KEY);
+  const initFuzz = storedFuzz == null ? '7' : storedFuzz;
+  const [fuzz, setFuzz] = React.useState<string>(initFuzz);
 
   const [rawFontSizeText, setRawFontSizeText] = React.useState('' + rawFontSize);
   const [languageText, setLanguageText] = React.useState(language);
@@ -53,22 +67,59 @@ export function App() {
   }, [theme]);
 
   React.useEffect(() => {
-    fetch(`${basePath}/api/read`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename,
+    if (retro) {
+      setLanguage('text');
+      document.body.style.textShadow = `0 0 1px ${color}, 0 0 ${fuzz}px ${color}`;
+      for (let i=0; i<document.styleSheets.length; i++) {
+        try {
+          document.styleSheets[i].insertRule(`.cursor { box-shadow: 0 0 1px ${color}, 0 0 ${fuzz}px ${color} !important; color: ${darken(color)} !important; }`);
+        } catch {
+          // ignore errors for modifying cross site stylesheets
+        }
+      }
+    } else {
+      setLanguage('markdown');
+      document.body.style.textShadow = 'none';
+      for (let i=0; i<document.styleSheets.length; i++) {
+        try {
+          document.styleSheets[i].insertRule(`.cursor { box-shadow: unset !important; color: ${darken(color)} !important; }`);
+        } catch {
+          // ignore errors for modifying cross site stylesheets
+        }
+      }
+    }
+  }, [retro]);
+
+  React.useEffect(() => {
+    Device.getInfo()
+      .then((info) => {
+        if (info.platform === 'web') {
+          fetch(`${basePath}/api/read`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              filename,
+            })
+          }).then(async response => {
+            const json = await response.json();
+            if (json.error) {
+              alert(json.error);
+            } else {
+              setText(json.text);
+          }
+          });
+        } else {
+          Filesystem.readFile({
+            path: filename,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          }).then(result => setText(result.data))
+            .catch(err => alert(err));
+        }
       })
-    }).then(async response => {
-      const json = await response.json();
-      if (json.error) {
-        alert(json.error);
-      } else {
-        setText(json.text);
-     }
-    });
+      .catch(err => alert(err));
   }, [filename]);
 
   function registerSaver(monaco: any) {
@@ -91,23 +142,37 @@ export function App() {
   }
 
   const save = (content: string) => {
-    fetch(`${basePath}/api/write`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename,
-          text: content,
-        })
-    }).then(async response => {
-      const json = await response.json();
-      if (json.error) {
-        alert(json.error);
-      } else {
-        setStatus('');
-      }
-    });
+    Device.getInfo()
+      .then(info => {
+        if (info.platform === 'web') {
+          fetch(`${basePath}/api/write`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              filename,
+              text: content,
+            })
+          }).then(async response => {
+            const json = await response.json();
+            if (json.error) {
+              alert(json.error);
+            } else {
+              setStatus('');
+            }
+          });
+        } else {
+          Filesystem.writeFile({
+            path: filename,
+            data: content,
+            directory: Directory.Documents,
+            encoding: Encoding.UTF8,
+          }).then(() => setStatus(''))
+            .catch(err => alert(err));
+        }
+      })
+      .catch(err => alert(err));
   };
 
   const onMount: OnMount = (editor, monaco: any) => {
@@ -119,8 +184,8 @@ export function App() {
           monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
         )
       ],
-      precondition: null,
-      keybindingContext: null,
+      precondition: undefined,
+      keybindingContext: undefined,
       contextMenuGroupId: 'navigation',
       contextMenuOrder: 1.5,
       run: (editor: any) => {
@@ -189,7 +254,7 @@ export function App() {
         wordWrap: true,
         fontSize,
         fontFamily,
-      }}
+      } as any}
       value={text}
       onMount={onMount}
       onChange={value => {
@@ -244,9 +309,11 @@ export function App() {
         }}>
           #
       </button>
-      <span style={buttonStyle}>
+      <button
+        onClick={() => save(text)}
+        style={buttonStyle}>
         {status}
-      </span>
+      </button>
       <div style={{
         color: color,
         display: controlsShown ? 'unset' : 'none',
@@ -334,7 +401,9 @@ export function App() {
         }}
         value={languageText}
         onChange={(event) => {
-          setLanguageText(event.target.value)
+          const newFont = event.target.value;
+          window.localStorage.setItem(FONT_KEY, newFont);
+          setLanguageText(newFont);
         }}
         onKeyDown={(event) => {
           if (event.code === 'Enter') {
@@ -365,6 +434,31 @@ export function App() {
             </option>))
           }
         </select>
+        &nbsp;Retro:&nbsp;
+        <input type='checkbox'
+               checked={retro}
+               onChange={() => {
+                 const newRetro = !retro;
+                 window.localStorage.setItem(RETRO_KEY, '' + newRetro);
+                 setRetro(newRetro);
+               }}/>
+        &nbsp;Fuzz:&nbsp;
+        <input style={{
+          background: '#000000',
+          borderWidth: '1px',
+          borderColor: color,
+          color: color,
+          width: '2em',
+          fontFamily,
+          fontSize,
+        }}
+        value={fuzz}
+        onChange={(event) => {
+          const newFuzz = event.target.value;
+          window.localStorage.setItem(FUZZ_KEY, newFuzz);
+          setFuzz(newFuzz);
+        }}
+        />
       </div>
       {component}
     </div>
@@ -559,6 +653,14 @@ const DEFAULT_RAW_MATHLINGUA_SYNTAX = [
   "formally:\nas?:\nnote?:",
   "generally:\nas?:\nnote?:"
 ];
+
+function darken(hexColor: string): string {
+  let result = '#';
+  for (const c of hexColor.replace(/#/, '')) {
+    result += Math.max(parseInt(c, 16) - 4, 0).toString(16);
+  }
+  return result;
+}
 
 export const SYNTAX_GROUPS =
   DEFAULT_RAW_MATHLINGUA_SYNTAX.map(it => it.replace("[]\n", "").split("\n"));

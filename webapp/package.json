@@ -4,6 +4,11 @@
   "private": true,
   "homepage": "./",
   "dependencies": {
+    "@capacitor/core": "^3.6.0",
+    "@capacitor/device": "^1.1.2",
+    "@capacitor/filesystem": "^1.1.0",
+    "@capacitor/ios": "^3.6.0",
+    "@capacitor/keyboard": "^1.2.3",
     "@monaco-editor/react": "^4.4.5",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -45,5 +50,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^3.6.0"
   }
 }

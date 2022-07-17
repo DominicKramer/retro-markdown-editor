@@ -19,6 +19,16 @@
   src: local('Flexi_IBM_VGA_True'), url(./fonts/Flexi_IBM_VGA_True.ttf) format('truetype');
 }
 
+@font-face {
+  font-family: 'TerminusTTF';
+  src: local('TerminusTTF-4.49.2.ttf'), url(./fonts/TerminusTTF-4.49.2.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Glass_TTY_VT220';
+  src: local('Glass_TTY_VT220.ttf'), url(./fonts/Glass_TTY_VT220.ttf) format('truetype');
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
