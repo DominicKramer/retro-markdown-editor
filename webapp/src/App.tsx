@@ -258,6 +258,7 @@ export function App() {
         cursorBlinking: 'solid',
         matchBrackets: 'never',
         wordWrap: true,
+        scrollBeyondLastLine: true,
         scrollbar: {
           useShadows: false,
           verticalScrollbarSize: 0,
