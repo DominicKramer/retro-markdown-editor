@@ -19,12 +19,14 @@ const COLOR_KEY = 'mlg-color';
 const FONT_KEY = 'mlg-font';
 const RETRO_KEY = 'mlg-retro';
 const FUZZ_KEY = 'mlg-fuzz';
+const THEME_KEY = 'mlg-theme';
 
 const COLORS = [
   '#ce9178', // orange
   '#b8b8b8', // gray
   '#54ba4e', // green
   '#00ffff',
+  '#333333',
 ];
 
 const FONTS = [
@@ -49,7 +51,7 @@ export function App() {
   const [text, setText] = React.useState('');
   const [status, setStatus] = React.useState('');
   const [rawFontSize, setRawFontSize] = React.useState(26);
-  const [theme, setTheme] = React.useState('light');
+  const [theme, setTheme] = React.useState(window.localStorage.getItem(THEME_KEY) || 'light2');
   const [fontFamily, setFontFamily] = React.useState(window.localStorage.getItem(FONT_KEY) || FONTS[2]);
   const [language, setLanguage] = React.useState('markdown');
   const [controlsShown, setControlsShown] = React.useState(false);
@@ -65,7 +67,11 @@ export function App() {
   const [languageText, setLanguageText] = React.useState(language);
 
   React.useEffect(() => {
-    StatusBar.hide();
+    try {
+      StatusBar.hide();
+    } catch {
+      // ignore exceptions since StatusBar is not supported on web
+    }
   }, []);
 
   React.useEffect(() => {
@@ -214,6 +220,23 @@ export function App() {
         'editorCursor.foreground': color,
       }
     });
+
+    monaco.editor.defineTheme('light2', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [{
+        background: '#fbfbfb',
+        foreground: color,
+      }],
+      colors: {
+        'editor.foreground': color,
+        'editor.background': '#fbfbfb',
+        'editor.selectionBackground': '#222222',
+        'editor.selectionHighlightBackground': '#fbfbfb',
+        'editorCursor.foreground': color,
+      }
+    });
+
     configureEditor(monaco);
     registerCompletionProvider(monaco);
     // registerSaver(monaco);
@@ -222,7 +245,7 @@ export function App() {
     setTheme('retro');
   };
 
-  const light = theme === 'light';
+  const light = theme === 'light2';
   const usingRetroFont = fontFamily !== 'Monospace';
   const foreground = light ? '#555555' : color;
   const fontSize = usingRetroFont ? rawFontSize + 7 : rawFontSize;
@@ -241,7 +264,7 @@ export function App() {
     component = <Editor
       height='92vh'
       language={language}
-      theme={light ? 'light' : 'retro'}
+      theme={light ? 'light2' : 'retro'}
       options={{
         lineNumbers: 'off',
         autoClosingBrackets: 'never',
@@ -293,18 +316,15 @@ export function App() {
   }
 
   return <div style={{
-    width: light ? '80%' : '99%',
+    width: '99%',
     marginLeft: 'auto',
     marginRight: 'auto',
-    border: light ? 'solid' : 'none',
-    borderWidth: '1px',
-    borderColor: light ? '#eee' : '#000000',
-    borderRadius: '2px',
-    boxShadow: light ? '0 1px 5px rgba(0,0,0,.1)' : 'none',
+    border: 'none',
+    boxShadow: 'none',
     marginTop: '2vh',
     paddingTop: '0.25em',
     paddingLeft: '1ex',
-    backgroundColor: light ? 'white' : '#000000',
+    backgroundColor: light ? '#fbfbfb' : '#000000',
   }}>
     <div>
       <button
@@ -445,11 +465,17 @@ export function App() {
           fontFamily,
           fontSize,
         }}
+        value={theme}
         onChange={(event) => {
-          setTheme(event.target.value);
+          const newTheme = event.target.value;
+          setTheme(newTheme);
+          window.localStorage.setItem(THEME_KEY, newTheme);
+          if (newTheme === 'light2') {
+            setRetro(false);
+          }
         }}>
           {
-            ['light', 'retro'].map(theme => (<option style={{
+            ['light2', 'retro'].map(theme => (<option style={{
               background: '#333333',
               border: 'solid',
               borderColor: color,
