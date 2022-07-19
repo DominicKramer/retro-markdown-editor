@@ -9,6 +9,8 @@
     "@capacitor/filesystem": "^1.1.0",
     "@capacitor/ios": "^3.6.0",
     "@capacitor/keyboard": "^1.2.3",
+    "@capacitor/share": "^1.1.2",
+    "@capacitor/status-bar": "^1.0.8",
     "@monaco-editor/react": "^4.4.5",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",

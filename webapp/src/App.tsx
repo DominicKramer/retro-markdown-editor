@@ -9,6 +9,8 @@ import 'katex/dist/katex.min.css';
 
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Device } from '@capacitor/device';
+import { Share } from '@capacitor/share';
+import { StatusBar } from '@capacitor/status-bar';
 
 const MATHLINGUA_KEY = 'book.md';
 const URL_SEARCH_PREFIX = '?filename=';
@@ -61,6 +63,10 @@ export function App() {
 
   const [rawFontSizeText, setRawFontSizeText] = React.useState('' + rawFontSize);
   const [languageText, setLanguageText] = React.useState(language);
+
+  React.useEffect(() => {
+    StatusBar.hide();
+  }, []);
 
   React.useEffect(() => {
     document.body.style.backgroundColor = theme === 'retro' ? '#000000' : '#fbfbfb';
@@ -252,6 +258,11 @@ export function App() {
         cursorBlinking: 'solid',
         matchBrackets: 'never',
         wordWrap: true,
+        scrollbar: {
+          useShadows: false,
+          verticalScrollbarSize: 0,
+          horizontalScrollbarSize: 0,
+        },
         fontSize,
         fontFamily,
       } as any}
@@ -308,6 +319,19 @@ export function App() {
           setShowEditor(!showEditor);
         }}>
           #
+      </button>
+      <button
+        onClick={async () => {
+          if (await Share.canShare()) {
+            await Share.share({
+              title: filename,
+              text,
+              dialogTitle: `Share ${filename}`,
+            });
+          }
+        }}
+        style={buttonStyle}>
+        +
       </button>
       <button
         onClick={() => save(text)}
